@@ -19,8 +19,8 @@
         <h2>Body Inputs</h2>
         <div class="grid">
           <label>
-            Sex
-            <select id="sex">
+            Gender
+            <select id="gender">
               <option value="male" selected>Male</option>
               <option value="female">Female</option>
             </select>
@@ -56,11 +56,12 @@
         <label class="stack">
           Base activity factor
           <select id="baseFactor">
-            <option value="1.2" selected>1.2 (Sedentary)</option>
-            <option value="1.375">1.375 (Light)</option>
-            <option value="1.55">1.55 (Moderate)</option>
-            <option value="1.725">1.725 (Very active)</option>
-            <option value="1.9">1.9 (Athlete)</option>
+            <option value="1.0">1.00</option>
+            <option value="1.1">1.10</option>
+            <option value="1.2" selected>1.20</option>
+            <option value="1.3">1.30</option>
+            <option value="1.4">1.40</option>
+            <option value="1.5">1.50</option>
           </select>
         </label>
 
@@ -89,17 +90,17 @@
         <label class="stack">
           Goal
           <select id="goalPct">
-            <option value="0" selected>Maintenance (0%)</option>
-            <option value="-5">Cut (-5%)</option>
-            <option value="-10">Cut (-10%)</option>
-            <option value="-15">Cut (-15%)</option>
-            <option value="-20">Cut (-20%)</option>
-            <option value="-25">Cut (-25%)</option>
-            <option value="5">Bulk (+5%)</option>
-            <option value="10">Bulk (+10%)</option>
-            <option value="15">Bulk (+15%)</option>
-            <option value="20">Bulk (+20%)</option>
-            <option value="25">Bulk (+25%)</option>
+            <option value="25">Bulk (extreme) +25%</option>
+            <option value="20">Bulk (heavy) +20%</option>
+            <option value="15">Bulk (moderate) +15%</option>
+            <option value="10">Bulk (light) +10%</option>
+            <option value="5">Bulk (extra light) +5%</option>
+            <option value="0" selected>Maintenance 0%</option>
+            <option value="-5">Cut (extra light) -5%</option>
+            <option value="-10">Cut (light) -10%</option>
+            <option value="-15">Cut (moderate) -15%</option>
+            <option value="-20">Cut (heavy) -20%</option>
+            <option value="-25">Cut (extreme) -25%</option>
           </select>
         </label>
 
@@ -111,7 +112,7 @@
         <div class="results">
           <div class="equation">
             <div class="eqRow"><span>TDEE</span><strong id="tdeeOut2">—</strong></div>
-            <div class="eqRow"><span>Adjustment</span><strong id="adjOut">—</strong></div>
+            <div class="eqRow"><span id="adjLabel">Adjustment</span><strong id="adjOut">—</strong></div>
             <hr />
             <div class="eqRow"><span>Calorie target</span><strong id="targetOut">—</strong></div>
           </div>

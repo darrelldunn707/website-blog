@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 
 const el = {
-  sex: $("sex"),
+  gender: $("gender"),
   age: $("age"),
   heightCm: $("heightCm"),
   weightKg: $("weightKg"),
@@ -15,6 +15,7 @@ const el = {
   actCalsOut: $("actCalsOut"),
   tdeeOut: $("tdeeOut"),
   tdeeOut2: $("tdeeOut2"),
+  adjLabel: $("adjLabel"),
   adjOut: $("adjOut"),
   targetOut: $("targetOut"),
   remainOut: $("remainOut"),
@@ -26,6 +27,7 @@ const el = {
   copyStatus: $("copyStatus"),
 };
 
+// TODO: Replace this activity preset list with the upcoming updated list.
 const activityPresets = [
   { name: "Static Stretching", met: 2.4 },
   { name: "Light Yoga", met: 2.8 },
@@ -45,11 +47,11 @@ function round(n) {
 }
 
 // Mifflin-St Jeor (metric)
-function calcBMR({ sex, age, heightCm, weightKg }) {
+function calcBMR({ gender, age, heightCm, weightKg }) {
   if (![age, heightCm, weightKg].every(Number.isFinite)) return NaN;
 
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
-  return sex === "male" ? base + 5 : base - 161;
+  return gender === "male" ? base + 5 : base - 161;
 }
 
 function calcActivityCals(weightKg, met, minutes) {
@@ -115,7 +117,7 @@ function renderActivityRow({ name = activityPresets[0].name, met = activityPrese
 }
 
 function recalc() {
-  const sex = el.sex.value;
+  const gender = el.gender.value;
   const age = Number(el.age.value);
   const heightCm = Number(el.heightCm.value);
   const weightKg = Number(el.weightKg.value);
@@ -124,7 +126,7 @@ function recalc() {
   const goalPct = Number(el.goalPct.value);
   const consumed = el.consumed.value === "" ? NaN : Number(el.consumed.value);
 
-  const bmr = calcBMR({ sex, age, heightCm, weightKg });
+  const bmr = calcBMR({ gender, age, heightCm, weightKg });
 
   const activities = getActivities();
   const actCals = activities.reduce((sum, a) => sum + calcActivityCals(weightKg, a.met, a.minutes), 0);
@@ -141,6 +143,10 @@ function recalc() {
   el.tdeeOut.textContent = round(tdee);
   el.tdeeOut2.textContent = round(tdee);
 
+  const goalText = el.goalPct.options[el.goalPct.selectedIndex]?.textContent || "Maintenance 0%";
+  const goalLabel = goalText.replace(/\s[+-]\d+%$/, "");
+  const goalPercent = `${goalPct > 0 ? "+" : ""}${goalPct}%`;
+  el.adjLabel.textContent = `Adjustment (${goalLabel}, ${goalPercent})`;
   el.adjOut.textContent = Number.isFinite(adj) ? `${adj >= 0 ? "+" : ""}${round(adj)}` : "—";
   el.targetOut.textContent = round(target);
   el.remainOut.textContent = Number.isFinite(remaining) ? round(remaining) : "—";
@@ -156,7 +162,7 @@ function setFromQuery() {
     node.value = val;
   };
 
-  setIf("sex", params.get("sex"));
+  setIf("gender", params.get("gender") ?? params.get("sex"));
   setIf("age", params.get("age"));
   setIf("heightCm", params.get("h"));
   setIf("weightKg", params.get("w"));
@@ -182,7 +188,7 @@ function setFromQuery() {
 
 function buildShareUrl() {
   const params = new URLSearchParams();
-  params.set("sex", el.sex.value);
+  params.set("gender", el.gender.value);
   params.set("age", el.age.value);
   params.set("h", el.heightCm.value);
   params.set("w", el.weightKg.value);
@@ -214,7 +220,7 @@ async function copyShareLink() {
 }
 
 // Wire up
-["sex", "age", "heightCm", "weightKg", "baseFactor", "goalPct", "consumed"].forEach((id) => {
+["gender", "age", "heightCm", "weightKg", "baseFactor", "goalPct", "consumed"].forEach((id) => {
   $(id).addEventListener("input", recalc);
   $(id).addEventListener("change", recalc);
 });
