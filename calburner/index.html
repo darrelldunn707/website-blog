@@ -1,49 +1,135 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Daily Calorie Burner</title>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
 
   <body>
+    <main class="container">
+      <header class="header">
+        <h1>Daily Calorie Burner</h1>
+        <p class="sub">One-page calculator. No login. No database.</p>
+      </header>
 
-    <script>
-      // Step 1: BMR
+      <section class="card">
+        <h2>Body Inputs</h2>
+        <div class="grid">
+          <label>
+            Sex
+            <select id="sex">
+              <option value="male" selected>Male</option>
+              <option value="female">Female</option>
+            </select>
+          </label>
 
-      let gender = 'male';
-      let age = 43.37;
-      let heightInCm = 163
-      let weightInKg = 63.2
-      let bmr = 0
+          <label>
+            Age
+            <input id="age" type="number" min="10" max="100" value="42" />
+          </label>
 
-      /* BMR formulas for male and female
-        Men -- BMR = (10 * weight in kg) + (6.25 * height in cm) − (5 * age in years) + 5
+          <label>
+            Height (cm)
+            <input id="heightCm" type="number" min="120" max="220" value="164" />
+          </label>
 
-        Women -- BMR = (10 * weight in kg) + (6.25 * height in cm) − (5 * age in years) − 161
-      */
+          <label>
+            Weight (kg)
+            <input id="weightKg" type="number" min="35" max="200" value="65" step="0.1" />
+          </label>
+        </div>
 
-      if (gender === 'male') {
-        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * age) + 5
-        console.log(bmr);
-      } else {
-        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * age) - 161
-        console.log(bmr);
-      }
+        <div class="results">
+          <div class="resultRow">
+            <span>BMR</span>
+            <strong id="bmrOut">—</strong>
+          </div>
+        </div>
+      </section>
 
-      // Step 2: TDEE Baseline = BMR X Activity Factor Base
+      <section class="card">
+        <h2>Daily Burn</h2>
 
-      let activityFactorBase = 1.2;
+        <label class="stack">
+          Base activity factor
+          <select id="baseFactor">
+            <option value="1.2" selected>1.2 (Sedentary)</option>
+            <option value="1.375">1.375 (Light)</option>
+            <option value="1.55">1.55 (Moderate)</option>
+            <option value="1.725">1.725 (Very active)</option>
+            <option value="1.9">1.9 (Athlete)</option>
+          </select>
+        </label>
 
-      let tdeeBase = bmr * activityFactorBase
-      console.log(tdeeBase);
+        <div class="activitiesHeader">
+          <h3>Activities</h3>
+          <button id="addActivityBtn" type="button">+ Add activity</button>
+        </div>
 
-      // Step 3: 
+        <div id="activities"></div>
 
-      // ADD MAX HEART RATE (MHR) CALCULATIONS 
+        <div class="results">
+          <div class="resultRow">
+            <span>Activity calories</span>
+            <strong id="actCalsOut">—</strong>
+          </div>
+          <div class="resultRow">
+            <span>TDEE (estimated)</span>
+            <strong id="tdeeOut">—</strong>
+          </div>
+        </div>
+      </section>
 
-    </script>
+      <section class="card">
+        <h2>Goal / Target</h2>
+
+        <label class="stack">
+          Goal
+          <select id="goalPct">
+            <option value="0" selected>Maintenance (0%)</option>
+            <option value="-5">Cut (-5%)</option>
+            <option value="-10">Cut (-10%)</option>
+            <option value="-15">Cut (-15%)</option>
+            <option value="-20">Cut (-20%)</option>
+            <option value="-25">Cut (-25%)</option>
+            <option value="5">Bulk (+5%)</option>
+            <option value="10">Bulk (+10%)</option>
+            <option value="15">Bulk (+15%)</option>
+            <option value="20">Bulk (+20%)</option>
+            <option value="25">Bulk (+25%)</option>
+          </select>
+        </label>
+
+        <label class="stack">
+          Consumed calories (optional)
+          <input id="consumed" type="number" min="0" step="1" placeholder="e.g. 1850" />
+        </label>
+
+        <div class="results">
+          <div class="equation">
+            <div class="eqRow"><span>TDEE</span><strong id="tdeeOut2">—</strong></div>
+            <div class="eqRow"><span>Adjustment</span><strong id="adjOut">—</strong></div>
+            <hr />
+            <div class="eqRow"><span>Calorie target</span><strong id="targetOut">—</strong></div>
+          </div>
+
+          <div class="resultRow">
+            <span>Remaining</span>
+            <strong id="remainOut">—</strong>
+          </div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <button id="copyLinkBtn" type="button">Copy link with inputs</button>
+        <span id="copyStatus" class="muted"></span>
+      </footer>
+    </main>
+
+    <script src="./app.js"></script>
   </body>
 
 </html>

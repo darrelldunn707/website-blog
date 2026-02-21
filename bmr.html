@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+  </head>
+
+  <body>
+
+    <script>
+      // Step 1: BMR
+
+      let gender = 'male';
+      let age = 43.37;
+      let heightInCm = 163
+      let weightInKg = 63.2
+      let bmr = 0
+
+      /* BMR formulas for male and female
+        Men -- BMR = (10 * weight in kg) + (6.25 * height in cm) − (5 * age in years) + 5
+
+        Women -- BMR = (10 * weight in kg) + (6.25 * height in cm) − (5 * age in years) − 161
+      */
+
+      if (gender === 'male') {
+        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * age) + 5
+        console.log(bmr);
+      } else {
+        bmr = (10 * weightInKg) + (6.25 * heightInCm) - (5 * age) - 161
+        console.log(bmr);
+      }
+
+      // Step 2: TDEE Baseline = BMR X Activity Factor Base
+
+      let activityFactorBase = 1.2;
+
+      let tdeeBase = bmr * activityFactorBase
+      console.log(tdeeBase);
+
+      // Step 3: 
+
+      // ADD MAX HEART RATE (MHR) CALCULATIONS 
+
+    </script>
+  </body>
+
+</html>
