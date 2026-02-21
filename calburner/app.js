@@ -5,6 +5,7 @@ const $ = (id) => document.getElementById(id);
 
 const el = {
   gender: $("gender"),
+  birthdate: $("birthdate"),
   age: $("age"),
   heightCm: $("heightCm"),
   weightKg: $("weightKg"),
@@ -53,6 +54,13 @@ function calcActivityCals(weightKg, met, minutes) {
   const hours = minutes / 60;
   // Standard MET formula: kcal = MET * weight(kg) * hours
   return met * weightKg * hours;
+}
+
+function calcAgeYears(birthdateStr) {
+  const bd = new Date(birthdateStr);
+  const ms = bd.getTime();
+  if (!Number.isFinite(ms)) return NaN;
+  return (Date.now() - ms) / (365.2425 * 24 * 60 * 60 * 1000);
 }
 
 function getActivities() {
@@ -152,7 +160,9 @@ function renderActivityRow({ activityId = defaultActivityId, intensity = "modera
 
 function recalcAndRender() {
   const gender = el.gender.value;
-  const age = Number(el.age.value);
+  const ageYears = calcAgeYears(el.birthdate.value);
+  el.age.value = Number.isFinite(ageYears) ? ageYears.toFixed(2) : "";
+  const age = ageYears;
   const heightCm = Number(el.heightCm.value);
   const weightKg = Number(el.weightKg.value);
 
@@ -197,7 +207,7 @@ function setFromQuery() {
   };
 
   setIf("gender", params.get("gender") ?? params.get("sex"));
-  setIf("age", params.get("age"));
+  setIf("birthdate", params.get("bd") ?? params.get("birthdate"));
   setIf("heightCm", params.get("h"));
   setIf("weightKg", params.get("w"));
   setIf("baseFactor", params.get("bf"));
@@ -228,7 +238,7 @@ function setFromQuery() {
 function buildShareUrl() {
   const params = new URLSearchParams();
   params.set("gender", el.gender.value);
-  params.set("age", el.age.value);
+  if (el.birthdate.value !== "") params.set("bd", el.birthdate.value);
   params.set("h", el.heightCm.value);
   params.set("w", el.weightKg.value);
   params.set("bf", el.baseFactor.value);
@@ -259,7 +269,7 @@ async function copyShareLink() {
 }
 
 // Wire up
-["gender", "age", "heightCm", "weightKg", "baseFactor", "goalPct", "consumed"].forEach((id) => {
+["gender", "birthdate", "heightCm", "weightKg", "baseFactor", "goalPct", "consumed"].forEach((id) => {
   $(id).addEventListener("input", recalcAndRender);
   $(id).addEventListener("change", recalcAndRender);
 });
