@@ -1,4 +1,5 @@
 // Daily Calorie Burner (no DB, all client-side)
+import { ACTIVITY_GROUPS, flattenActivities, getMET } from "./activities.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -27,19 +28,12 @@ const el = {
   copyStatus: $("copyStatus"),
 };
 
-// TODO: Replace this activity preset list with the upcoming updated list.
-const activityPresets = [
-  { name: "Static Stretching", met: 2.4 },
-  { name: "Light Yoga", met: 2.8 },
-  { name: "Walking (slow)", met: 2.6 },
-  { name: "Walking (moderate)", met: 3.8 },
-  { name: "Walking (brisk)", met: 4.1 },
-  { name: "Running (easy)", met: 8.3 },
-  { name: "Running (moderate)", met: 9.8 },
-  { name: "Resistance training (light)", met: 3.5 },
-  { name: "Resistance training (moderate)", met: 5.0 },
-  { name: "HIIT", met: 8.0 },
-];
+const allActivities = flattenActivities(ACTIVITY_GROUPS);
+const defaultActivityId = allActivities[0]?.id || "";
+
+function findActivityById(activityId) {
+  return allActivities.find((a) => a.id === activityId) || allActivities[0] || null;
+}
 
 function round(n) {
   if (!Number.isFinite(n)) return "—";
@@ -64,30 +58,54 @@ function calcActivityCals(weightKg, met, minutes) {
 function getActivities() {
   const rows = [...el.activities.querySelectorAll(".activityRow")];
   return rows.map((row) => {
-    const name = row.querySelector('[data-field="name"]').value;
+    const activityId = row.querySelector('[data-field="activity"]').value;
+    const intensity = row.querySelector('[data-field="intensity"]').value;
     const met = Number(row.querySelector('[data-field="met"]').value);
     const minutes = Number(row.querySelector('[data-field="minutes"]').value);
-    return { name, met, minutes };
+    return { activityId, intensity, met, minutes };
   });
 }
 
-function renderActivityRow({ name = activityPresets[0].name, met = activityPresets[0].met, minutes = 30 } = {}) {
+function renderActivityRow({ activityId = defaultActivityId, intensity = "moderate", met, minutes = 30 } = {}) {
   const row = document.createElement("div");
   row.className = "activityRow";
 
-  const options = activityPresets
-    .map((p) => `<option value="${p.name}" ${p.name === name ? "selected" : ""}>${p.name}</option>`)
+  const state = {
+    selectedActivityId: activityId,
+    intensity,
+    metManualOverride: false,
+  };
+
+  const options = ACTIVITY_GROUPS
+    .map((group) => {
+      const groupOptions = group.activities
+        .map((activity) => `<option value="${activity.id}" ${activity.id === state.selectedActivityId ? "selected" : ""}>${activity.name}</option>`)
+        .join("");
+      return `<optgroup label="${group.groupName}">${groupOptions}</optgroup>`;
+    })
     .join("");
+
+  const selectedActivity = findActivityById(state.selectedActivityId);
+  const initialMET = Number.isFinite(met) ? met : getMET(selectedActivity, state.intensity);
 
   row.innerHTML = `
     <label>
       Activity
-      <select data-field="name">${options}</select>
+      <select data-field="activity">${options}</select>
+    </label>
+
+    <label>
+      Intensity
+      <select data-field="intensity">
+        <option value="easy" ${state.intensity === "easy" ? "selected" : ""}>Easy</option>
+        <option value="moderate" ${state.intensity === "moderate" ? "selected" : ""}>Moderate</option>
+        <option value="hard" ${state.intensity === "hard" ? "selected" : ""}>Hard</option>
+      </select>
     </label>
 
     <label>
       MET
-      <input data-field="met" type="number" min="0" step="0.1" value="${met}" />
+      <input data-field="met" type="number" min="0" step="0.1" value="${initialMET}" />
     </label>
 
     <label>
@@ -98,25 +116,41 @@ function renderActivityRow({ name = activityPresets[0].name, met = activityPrese
     <button type="button" data-field="remove">Remove</button>
   `;
 
-  // When preset changes, auto-fill MET (user can still override after)
-  row.querySelector('[data-field="name"]').addEventListener("change", (e) => {
-    const preset = activityPresets.find((p) => p.name === e.target.value);
-    if (preset) row.querySelector('[data-field="met"]').value = preset.met;
-    recalc();
+  const setMETFromSelection = () => {
+    const activity = findActivityById(state.selectedActivityId);
+    const metValue = getMET(activity, state.intensity);
+    row.querySelector('[data-field="met"]').value = metValue;
+  };
+
+  row.querySelector('[data-field="activity"]').addEventListener("change", (e) => {
+    state.selectedActivityId = e.target.value;
+    state.metManualOverride = false;
+    setMETFromSelection();
+    recalcAndRender();
   });
 
-  row.querySelector('[data-field="met"]').addEventListener("input", recalc);
-  row.querySelector('[data-field="minutes"]').addEventListener("input", recalc);
+  row.querySelector('[data-field="intensity"]').addEventListener("change", (e) => {
+    state.intensity = e.target.value;
+    state.metManualOverride = false;
+    setMETFromSelection();
+    recalcAndRender();
+  });
+
+  row.querySelector('[data-field="met"]').addEventListener("input", () => {
+    state.metManualOverride = true;
+    recalcAndRender();
+  });
+  row.querySelector('[data-field="minutes"]').addEventListener("input", recalcAndRender);
 
   row.querySelector('[data-field="remove"]').addEventListener("click", () => {
     row.remove();
-    recalc();
+    recalcAndRender();
   });
 
   el.activities.appendChild(row);
 }
 
-function recalc() {
+function recalcAndRender() {
   const gender = el.gender.value;
   const age = Number(el.age.value);
   const heightCm = Number(el.heightCm.value);
@@ -170,17 +204,22 @@ function setFromQuery() {
   setIf("goalPct", params.get("g"));
   setIf("consumed", params.get("c"));
 
-  // activities: a=name|met|min;name|met|min
+  // activities: a=activityId|met|min|intensity;activityId|met|min|intensity
   const a = params.get("a");
   if (a) {
     el.activities.innerHTML = "";
     const parts = a.split(";");
     for (const p of parts) {
-      const [name, met, min] = p.split("|");
+      const [activityRaw, met, min, intensity] = p.split("|");
+      const activityDecoded = decodeURIComponent(activityRaw || "");
+      const resolvedActivityId = allActivities.some((item) => item.id === activityDecoded)
+        ? activityDecoded
+        : (allActivities.find((item) => item.name === activityDecoded)?.id || defaultActivityId);
       renderActivityRow({
-        name: decodeURIComponent(name || activityPresets[0].name),
-        met: Number(met) || activityPresets[0].met,
+        activityId: resolvedActivityId,
+        met: Number(met),
         minutes: Number(min) || 30,
+        intensity: ["easy", "moderate", "hard"].includes((intensity || "").toLowerCase()) ? intensity.toLowerCase() : "moderate",
       });
     }
   }
@@ -197,10 +236,10 @@ function buildShareUrl() {
   if (el.consumed.value !== "") params.set("c", el.consumed.value);
 
   const activities = getActivities().map((a) => {
-    const safeName = encodeURIComponent(a.name);
+    const safeActivityId = encodeURIComponent(a.activityId);
     const met = Number.isFinite(a.met) ? a.met : "";
     const min = Number.isFinite(a.minutes) ? a.minutes : "";
-    return `${safeName}|${met}|${min}`;
+    return `${safeActivityId}|${met}|${min}|${a.intensity}`;
   });
   if (activities.length) params.set("a", activities.join(";"));
 
@@ -221,8 +260,8 @@ async function copyShareLink() {
 
 // Wire up
 ["gender", "age", "heightCm", "weightKg", "baseFactor", "goalPct", "consumed"].forEach((id) => {
-  $(id).addEventListener("input", recalc);
-  $(id).addEventListener("change", recalc);
+  $(id).addEventListener("input", recalcAndRender);
+  $(id).addEventListener("change", recalcAndRender);
 });
 
 el.addActivityBtn.addEventListener("click", () => renderActivityRow());
@@ -231,4 +270,4 @@ el.copyLinkBtn.addEventListener("click", copyShareLink);
 // Init
 renderActivityRow(); // start with one activity row
 setFromQuery();
-recalc();
+recalcAndRender();
